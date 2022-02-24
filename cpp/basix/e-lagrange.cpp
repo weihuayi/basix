@@ -1103,7 +1103,7 @@ xt::xtensor<double, 2> make_dpc_points(cell::type celltype, int degree,
         else
         {
           // Diagonal cross section is a hexagon
-          const double param = (z - 1) / 2;
+          const double param = (z - 1) / z;
           xt::xtensor<double, 2> hex({6, 2});
           if (z <= 1.5)
           {
@@ -1128,25 +1128,28 @@ xt::xtensor<double, 2> make_dpc_points(cell::type celltype, int degree,
               = 0.5 * (xt::row(hex, 0) + xt::row(hex, 1));
           const double gradient
               = (start_p(0) - end_p(0)) / (end_p(1) - start_p(1));
-          const xt::xtensor<double, 1> origin = {z - 1, 0, 1};
+          const xt::xtensor<double, 1> origin = {z, 0, 0};
           const xt::xtensor<double, 2> axes
               = {{-z, z, 0},
                  {-z / std::sqrt(3), -z / std::sqrt(3), z * 2 / std::sqrt(3)}};
+          for (int a = 0; a < 6; ++a)
+          {
+            const xt::xtensor<double, 1> b = origin
+                                             + hex(a, 0) * xt::row(axes, 0)
+                                             + hex(a, 1) * xt::row(axes, 1);
+          }
           for (int j = 0; j <= k; ++j)
           {
             if (j == 0)
             {
-              std::cout << "   " << start_p(0) << "," << start_p(1) << "\n";
               xt::row(pts, n++) = origin + start_p(0) * xt::row(axes, 0)
                                   + start_p(1) * xt::row(axes, 1);
-              std::cout << "   " << pts(n - 1, 0) << "," << pts(n - 1, 1) << ","
-                        << pts(n - 1, 2) << "\n";
             }
             else
             {
               const xt::xtensor<double, 1> diag_point
                   = start_p
-                    + j / k * (end_p - start_p)
+                    + static_cast<double>(j) / k * (end_p - start_p)
                           * (1 - 16 * param * (0.5 - param) / (k * k + 1));
               xt::xtensor<double, 2> ends({2, 2});
               int end = 0;
@@ -1159,30 +1162,25 @@ xt::xtensor<double, 2> make_dpc_points(cell::type celltype, int degree,
                 const double denom = hex(nv, 1) - hex(side_n, 1)
                                      + gradient * (hex(side_n, 0) - hex(nv, 0));
                 if ((0 <= num && num < denom) || (0 >= num && num > denom))
+                {
                   xt::row(ends, end++)
                       = xt::row(hex, side_n)
                         + num / denom
                               * (xt::row(hex, nv) - xt::row(hex, side_n));
+                }
               }
               assert(end == 2);
               const auto interval_pts = lattice::create(
                   cell::type::interval, j * 2 <= k ? j * 2 : 1 + 2 * (k - j),
                   latticetype, true);
-              std::cout << param << "\n";
-              std::cout << param << "\n";
-              std::cout << param << "\n";
               for (std::size_t i = 0; i < interval_pts.shape(0); ++i)
               {
                 const xt::xtensor<double, 1> pt
                     = xt::row(ends, 0)
-                      + interval_pts(i) * (xt::row(ends, 1) - xt::row(ends, 0));
+                      + interval_pts(i, 0)
+                            * (xt::row(ends, 1) - xt::row(ends, 0));
                 xt::row(pts, n++) = origin + pt(0) * xt::row(axes, 0)
                                     + pt(1) * xt::row(axes, 1);
-                std::cout << ends(0, 0) << "," << ends(0, 1) << "\n"
-                          << ends(1, 0) << "," << ends(1, 1) << "\n";
-                std::cout << pt(0) << "," << pt(1) << "\n";
-                std::cout << pts(n - 1, 0) << "," << pts(n - 1, 1) << ","
-                          << pts(n - 1, 2) << "\n";
               }
             }
           }
