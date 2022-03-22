@@ -399,6 +399,9 @@ Interface to the Basix C++ library.
       .value("unset", element::dpc_variant::unset)
       .value("simplex_equispaced", element::dpc_variant::simplex_equispaced)
       .value("simplex_gll", element::dpc_variant::simplex_gll)
+      .value("mid_simplex_equispaced",
+             element::dpc_variant::mid_simplex_equispaced)
+      .value("mid_simplex_gll", element::dpc_variant::mid_simplex_gll)
       .value("horizontal_equispaced",
              element::dpc_variant::horizontal_equispaced)
       .value("horizontal_gll", element::dpc_variant::horizontal_gll)

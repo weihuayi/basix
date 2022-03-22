@@ -1049,6 +1049,48 @@ xt::xtensor<double, 2> make_dpc_points(cell::type celltype, int degree,
       throw std::runtime_error("Invalid cell type");
     }
   }
+  else if (variant == element::dpc_variant::mid_simplex_equispaced
+           or variant == element::dpc_variant::mid_simplex_gll)
+  {
+    lattice::type latticetype;
+    lattice::simplex_method latticesm = lattice::simplex_method::isaac;
+    if (variant == element::dpc_variant::mid_simplex_equispaced)
+      latticetype = lattice::type::equispaced;
+    else if (variant == element::dpc_variant::mid_simplex_gll)
+      latticetype = lattice::type::gll;
+
+    switch (celltype)
+    {
+    case cell::type::quadrilateral:
+    {
+      auto lattice = lattice::create(cell::type::triangle, degree, latticetype,
+                                     true, latticesm);
+      xt::xtensor<double, 2> points(lattice.shape());
+      for (std::size_t i = 0; i < lattice.shape(0); ++i)
+      {
+        points(i, 0) = lattice(i, 0) + 0.5 * lattice(i, 1);
+        points(i, 1) = lattice(i, 1);
+      }
+      return points;
+    }
+    case cell::type::hexahedron:
+    {
+      auto lattice = lattice::create(cell::type::tetrahedron, degree,
+                                     latticetype, true, latticesm);
+      xt::xtensor<double, 2> points(lattice.shape());
+      for (std::size_t i = 0; i < lattice.shape(0); ++i)
+      {
+        points(i, 0)
+            = lattice(i, 0) + 0.5 * lattice(i, 1) + 0.5 * lattice(i, 2);
+        points(i, 1) = lattice(i, 1) + 0.5 * lattice(i, 2);
+        points(i, 2) = lattice(i, 2);
+      }
+      return points;
+    }
+    default:
+      throw std::runtime_error("Invalid cell type");
+    }
+  }
   else if (variant == element::dpc_variant::horizontal_equispaced
            or variant == element::dpc_variant::horizontal_gll)
   {
