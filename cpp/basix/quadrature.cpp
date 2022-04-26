@@ -386,7 +386,28 @@ make_gauss_jacobi_quadrature(cell::type celltype, std::size_t m)
     return {Qpts, Qwts};
   }
   case cell::type::pyramid:
-    throw std::runtime_error("Pyramid not yet supported");
+  {
+    auto [QptsL, QwtsL] = make_quadrature_line(np);
+    xt::xtensor<double, 2> Qpts({np * np * np, 3});
+    std::vector<double> Qwts(np * np * np);
+    int c = 0;
+    for (std::size_t i = 0; i < np; ++i)
+    {
+      for (std::size_t j = 0; j < np; ++j)
+      {
+        for (std::size_t k = 0; k < np; ++k)
+        {
+          Qpts(c, 0) = QptsL[i] * (1 - QptsL[k]);
+          Qpts(c, 1) = QptsL[j] * (1 - QptsL[k]);
+          Qpts(c, 2) = QptsL[k];
+          Qwts[c] = QwtsL[i] * QwtsL[j] * QwtsL[k] * (1 - QptsL[k])
+                    * (1 - QptsL[k]) * 4.0 / 3.0;
+          ++c;
+        }
+      }
+    }
+    return {Qpts, Qwts};
+  }
   case cell::type::triangle:
     return make_quadrature_triangle_collapsed(np);
   case cell::type::tetrahedron:

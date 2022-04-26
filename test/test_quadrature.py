@@ -137,3 +137,9 @@ def test_gll():
     assert (np.allclose(wts, ref_wts3))
     assert np.isclose((pts * wts.reshape(-1, 1)).sum(), 0)
     assert np.isclose(sum(wts), 8)
+
+
+@pytest.mark.parametrize("order", range(5))
+def test_quadrature_pyramid(order):
+    pts, wts = basix.make_quadrature(basix.CellType.pyramid, order)
+    assert np.isclose(sum(wts), 1/3)
