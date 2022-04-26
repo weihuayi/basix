@@ -64,6 +64,7 @@ def evaluate(function, pt):
                             y**2, y**2 * z, y**2 * z**2, x * y, x * y * z, x * y * z**2,
                             x**2, x**2 * z, x**2 * z**2], 2],
     [basix.CellType.pyramid, [one], 0],
+    [basix.CellType.pyramid, [one, 2*y + z, 2*x + z, 4*x*y + 2*x*z + 2*y*z + z**2 - 2*z, z], 1],
 ])
 def test_order(cell_type, functions, degree):
     points, weights = basix.make_quadrature(cell_type, 2 * degree)
@@ -75,6 +76,7 @@ def test_order(cell_type, functions, degree):
     eval_polys = basix.tabulate_polynomials(basix.PolynomialType.legendre, cell_type, degree, eval_points)
 
     for n, function in enumerate(functions):
+        print(function)
         expected_eval = [float(evaluate(function, i)) for i in eval_points]
 
         # Using n polynomials

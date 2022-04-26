@@ -387,6 +387,12 @@ make_gauss_jacobi_quadrature(cell::type celltype, std::size_t m)
   }
   case cell::type::pyramid:
   {
+    if (np == 1)
+    {
+      xt::xtensor<double, 2> Qpts = {{0.4, 0.4, 0.2}};
+      std::vector<double> Qwts = {1. / 3.};
+      return {Qpts, Qwts};
+    }
     auto [QptsL, QwtsL] = make_quadrature_line(np);
     xt::xtensor<double, 2> Qpts({np * np * np, 3});
     std::vector<double> Qwts(np * np * np);
@@ -401,7 +407,7 @@ make_gauss_jacobi_quadrature(cell::type celltype, std::size_t m)
           Qpts(c, 1) = QptsL[j] * (1 - QptsL[k]);
           Qpts(c, 2) = QptsL[k];
           Qwts[c] = QwtsL[i] * QwtsL[j] * QwtsL[k] * (1 - QptsL[k])
-                    * (1 - QptsL[k]) * 4.0 / 3.0;
+                    * (1 - QptsL[k]);
           ++c;
         }
       }
