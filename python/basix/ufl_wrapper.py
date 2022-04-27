@@ -8,10 +8,15 @@ import basix
 class BasixElement(FiniteElementBase):
     """A wrapper allowing Basix elements to be used with UFL."""
 
-    def __init__(self, element):
-        super().__init__(
-            element.family.name, element.cell_type.name, element.degree, None, tuple(element.value_shape),
-            tuple(element.value_shape))
+    def __init__(self, element, cell=None):
+        if cell is None:
+            super().__init__(
+                element.family.name, element.cell_type.name, element.degree, None, tuple(element.value_shape),
+                tuple(element.value_shape))
+        else:
+            super().__init__(
+                element.family.name, cell, element.degree, None, tuple(element.value_shape),
+                tuple(element.value_shape))
 
         if element.family == basix.ElementFamily.custom:
             self._repr = f"custom Basix element ({compute_signature(element)})"
