@@ -23,6 +23,7 @@ class BasixElement(FiniteElementBase):
             self._repr = (f"Basix element ({element.family.name}, {element.cell_type.name}, {element.degree}, "
                           f"{element.lagrange_variant.name}, {element.dpc_variant.name}, {element.discontinuous})")
         self.basix_element = element
+        self._variant = None
 
     def mapping(self):
         """Get the map type for this element."""
