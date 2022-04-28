@@ -15,6 +15,10 @@
 
 extern "C"
 {
+  void dgemm_(char transa, char transb, int m, int n, int k, double alpha,
+              double* a, int lda, double* b, int ldb, double beta, double* c,
+              int ldc);
+
   void dsyevd_(char* jobz, char* uplo, int* n, double* a, int* lda, double* w,
                double* work, int* lwork, int* iwork, int* liwork, int* info);
 
@@ -113,3 +117,37 @@ bool basix::math::is_singular(const xt::xtensor<double, 2>& A)
   return false;
 }
 //------------------------------------------------------------------
+void basix::math::dot(const xt::xtensor<double, 2>& A,
+                      const xt::xtensor<double, 2>& B,
+                      xt::xtensor<double, 2>& C)
+{
+  int m = A.shape(0);
+  int n = B.shape(1);
+  int k = A.shape(1);
+
+  assert(A.shape(1) == B.shape(0));
+  assert(C.shape(0) == C.shape(0));
+  assert(C.shape(1) == B.shape(1));
+
+  if (m * n * k < 4096)
+    for (std::size_t i = 0; i < A.shape(0); i++)
+      for (std::size_t j = 0; j < B.shape(1); j++)
+        for (std::size_t k = 0; k < A.shape(1); k++)
+          C(i, j) += A(i, k) * B(k, j);
+  else
+  {
+    double alpha = 1;
+    double beta = 0;
+    dgemm_('n', 'n', m, n, k, alpha, const_cast<double*>(A.data()), k,
+           const_cast<double*>(B.data()), n, beta,
+           const_cast<double*>(C.data()), n);
+  }
+}
+//------------------------------------------------------------------
+xt::xtensor<double, 2> basix::math::dot(const xt::xtensor<double, 2>& A,
+                                        const xt::xtensor<double, 2>& B)
+{
+  xt::xtensor<double, 2> C = xt::zeros<double>({A.shape(0), B.shape(1)});
+  dot(A, B, C);
+  return C;
+}
