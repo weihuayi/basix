@@ -5,7 +5,7 @@ import sysconfig
 
 setup(name="fenics-basix",
       python_requires='>=3.7.0',
-      version="0.4.1.dev0",
+      version="0.4.2.dev0",
       description='Basix Python interface',
       url="https://github.com/FEniCS/basix",
       author='FEniCS Project',
@@ -18,7 +18,7 @@ setup(name="fenics-basix",
           "docs": ["markdown", "pylit3", "pyyaml", "sphinx", "sphinx_rtd_theme"],
           "lint": ["flake8", "pydocstyle"],
           "optional": ["numba"],
-          "test": ["pytest", "sympy", "numba", "scipy", "matplotlib"],
+          "test": ["pytest", "sympy", "numba", "scipy", "matplotlib", "fenics-ufl"],
           "ci": ["pytest-xdist", "fenics-basix[docs]", "fenics-basix[lint]", "fenics-basix[optional]",
                  "fenics-basix[test]"]
       },
