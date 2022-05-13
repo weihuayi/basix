@@ -403,11 +403,11 @@ make_gauss_jacobi_quadrature(cell::type celltype, std::size_t m)
       {
         for (std::size_t k = 0; k < np; ++k)
         {
-          Qpts(c, 0) = QptsL[i] * (1 - QptsL[k]);
-          Qpts(c, 1) = QptsL[j] * (1 - QptsL[k]);
-          Qpts(c, 2) = QptsL[k];
-          Qwts[c] = QwtsL[i] * QwtsL[j] * QwtsL[k] * (1 - QptsL[k])
-                    * (1 - QptsL[k]);
+          Qpts(c, 0) = QptsL(i, 0) * (1 - QptsL(k, 0));
+          Qpts(c, 1) = QptsL(j, 0) * (1 - QptsL(k, 0));
+          Qpts(c, 2) = QptsL(k, 0);
+          Qwts[c] = QwtsL[i] * QwtsL[j] * QwtsL[k] * (1 - QptsL(k, 0))
+                    * (1 - QptsL(k, 0));
           ++c;
         }
       }
