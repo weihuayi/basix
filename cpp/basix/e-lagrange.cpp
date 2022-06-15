@@ -93,16 +93,36 @@ FiniteElement create_d_lagrange(cell::type celltype, int degree,
   const std::vector<std::vector<std::vector<int>>> topology
       = cell::topology(celltype);
 
-  std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
-  std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
+  // std::array<std::vector<xt::xtensor<double, 4>>, 4> M;
+  // std::array<std::vector<xt::xtensor<double, 2>>, 4> x;
+  std::array<std::vector<std::vector<double>>, 4> Mbuffer;
+  std::array<std::vector<std::vector<double>>, 4> xbuffer;
+
+  using mdspan2_t = stdex::mdspan<double, stdex::dextents<2>>;
+  using mdspan4_t = stdex::mdspan<double, stdex::dextents<4>>;
+  std::array<std::vector<mdspan4_t>, 4> M;
+  std::array<std::vector<mdspan2_t>, 4> x;
 
   for (std::size_t i = 0; i < tdim; ++i)
   {
-    x[i] = std::vector<xt::xtensor<double, 2>>(
-        cell::num_sub_entities(celltype, i), xt::xtensor<double, 2>({0, tdim}));
-    M[i] = std::vector<xt::xtensor<double, 4>>(
-        cell::num_sub_entities(celltype, i),
-        xt::xtensor<double, 4>({0, 1, 0, 1}));
+    // x[i] = std::vector<xt::xtensor<double, 2>>(
+    //     cell::num_sub_entities(celltype, i), xt::xtensor<double, 2>({0,
+    //     tdim}));
+    // M[i] = std::vector<xt::xtensor<double, 4>>(
+    //     cell::num_sub_entities(celltype, i),
+    //     xt::xtensor<double, 4>({0, 1, 0, 1}));
+
+    std::size_t num_ent = cell::num_sub_entities(celltype, i);
+    xbuffer[i].resize(num_ent);
+    Mbuffer[i].resize(num_ent);
+
+    x[i].resize(num_ent);
+    M[i].resize(num_ent);
+    for (std::size_t e = 0; e < num_ent; ++e)
+    {
+      x[i][e] = mdspan2_t(xbuffer[i][e].data(), 0, tdim);
+      M[i][e] = mdspan4_t(Mbuffer[i][e].data(), 0, 1, 0, 1);
+    }
   }
 
   if (celltype == cell::type::prism or celltype == cell::type::pyramid)
@@ -119,14 +139,50 @@ FiniteElement create_d_lagrange(cell::type celltype, int degree,
   // Create points in interior
   const xt::xtensor<double, 2> pt = lattice::create(
       celltype, lattice_degree, lattice_type, false, simplex_method);
-  x[tdim].push_back(pt);
+  // x[tdim].push_back(pt);
+  xbuffer[tdim].emplace_back(pt.data(), pt.data() + pt.size());
+  x[tdim].emplace_back(xbuffer[tdim].back().data(), pt.shape(0), pt.shape(1));
+
   const std::size_t num_dofs = pt.shape(0);
-  std::array<std::size_t, 4> s = {num_dofs, 1, num_dofs, 1};
-  M[tdim].push_back(xt::xtensor<double, 4>(s));
-  xt::view(M[tdim][0], xt::all(), 0, xt::all(), 0) = xt::eye<double>(num_dofs);
+  // std::array<std::size_t, 4> s = {num_dofs, 1, num_dofs, 1};
+  // M[tdim].push_back(xt::xtensor<double, 4>(s));
+  Mbuffer[tdim].emplace_back(num_dofs * num_dofs);
+  M[tdim].emplace_back(Mbuffer[tdim].back().data(), num_dofs, 1, num_dofs, 1);
+
+  // xt::view(M[tdim][0], xt::all(), 0, xt::all(), 0) =
+  // xt::eye<double>(num_dofs);
+  for (std::size_t i = 0; i < num_dofs; ++i)
+    M[tdim][0](i, 0, i, 0) = 1.0;
+
+  std::array<std::vector<xt::xtensor<double, 2>>, 4> _x;
+  std::array<std::vector<xt::xtensor<double, 4>>, 4> _M;
+  for (std::size_t i = 0; i < 4; ++i)
+  {
+    _x[i].resize(x[i].size());
+    for (std::size_t j = 0; j < x[i].size(); ++j)
+    {
+      auto ext = x[i][j].extents();
+      _x[i][j] = xt::zeros<double>({ext.extent(0), ext.extent(1)});
+      for (std::size_t k0 = 0; k0 < ext.extent(0); ++k0)
+        for (std::size_t k1 = 0; k1 < ext.extent(1); ++k1)
+          _x[i][j](k0, k1) = x[i][j](k0, k1);
+    }
+
+    _M[i].resize(M[i].size());
+    for (std::size_t j = 0; j < M[i].size(); ++j)
+    {
+      auto ext = x[i][j].extents();
+      _M[i][j] = xt::zeros<double>({ext.extent(0), ext.extent(1)});
+      for (std::size_t k0 = 0; k0 < ext.extent(0); ++k0)
+        for (std::size_t k1 = 0; k1 < ext.extent(1); ++k1)
+          for (std::size_t k2 = 0; k2 < ext.extent(2); ++k2)
+            for (std::size_t k3 = 0; k3 < ext.extent(3); ++k3)
+              _M[i][j](k0, k1, k2, k3) = M[i][j](k0, k1, k2, k3);
+    }
+  }
 
   return FiniteElement(element::family::P, celltype, degree, {},
-                       xt::eye<double>(ndofs), x, M, 0, maps::type::identity,
+                       xt::eye<double>(ndofs), _x, _M, 0, maps::type::identity,
                        true, degree, degree, variant);
 }
 //----------------------------------------------------------------------------
